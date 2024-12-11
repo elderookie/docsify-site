@@ -194,6 +194,86 @@ public function boot()
 
 ### 2.2 EC2（サーバー）
 - EC2の役割
+#### EC2の役割とLaravelアプリとの関係
+
+EC2（Amazon Elastic Compute Cloud）は、AWSが提供する仮想サーバーサービスで、Laravelのようなアプリケーションを動作させるための「基盤」となるサーバーで、アプリのコードや必要なソフトウェアをインストールする場所です。ALBと連携することで、ユーザーからのリクエストを効率よく処理し、スムーズにアプリケーションを運用できます。スケーラブルで柔軟な環境を提供するため、Laravelアプリの運用には最適です。
+
+---
+
+#### EC2の役割
+1. **アプリケーションを動かすためのサーバー**  
+   EC2は、Laravelアプリケーションを動作させるための「コンピュータ」としての役割を果たします。  
+   - 例）Laravelアプリのコードや、PHP、MySQLなどのソフトウェアをインストールする場所。
+
+2. **カスタマイズ可能なサーバー環境**
+   - 必要なOS（Amazon Linux、Ubuntuなど）やソフトウェアを自由にインストールできます。
+   - Laravelが必要とする環境（PHP, Composer, Webサーバー）を構築できます。
+
+3. **スケーラブルなサーバー**
+   - サーバーの性能（CPUやメモリ）をアプリの規模に応じて柔軟に変更可能。
+   - トラフィックが増えた場合に新しいEC2インスタンスを追加することで負荷分散ができます。
+
+4. **ALBと連携するバックエンド**
+   - ALB（ロードバランサー）が受け取ったリクエストをEC2に振り分け、Laravelアプリが処理を行います。
+
+---
+
+#### Laravelアプリとの連携
+LaravelアプリケーションをEC2上で動作させる流れを解説します。
+
+##### 1. **EC2のセットアップ**
+- EC2インスタンスを起動してサーバー環境を用意します。
+  - OSの選択（Amazon LinuxやUbuntuが一般的）。
+  - 必要なソフトウェアのインストール（例：PHP, Composer, MySQL, Nginx/Apache）。
+
+##### 2. **Laravelアプリのデプロイ**
+- EC2にLaravelアプリをアップロードします。
+  - 方法例：SSHで接続してコードを手動アップロードする、またはGitを使ってデプロイ。
+- `.env`ファイルを設定し、アプリケーションの環境を構成します。
+
+##### 3. **Webサーバーの設定**
+- Laravelアプリが動作するよう、Webサーバー（NginxまたはApache）を設定します。
+  - 例）Nginxの場合、以下のような設定を追加:
+    ```nginx
+    server {
+        listen 80;
+        server_name your-ec2-public-ip;
+        root /path/to/laravel/public;
+        index index.php index.html;
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+    }
+    ```
+
+##### 4. **ALBとの連携**
+- EC2をターゲットグループに登録し、ALBがEC2へのリクエストを振り分けるよう設定します。
+- ヘルスチェック用のエンドポイントをLaravelで用意（例：`/health-check`）。
+
+##### 5. **アプリの動作確認**
+- ブラウザでALBのドメイン名（またはEC2のIPアドレス）にアクセスし、Laravelアプリが正しく表示されるか確認します。
+
+---
+
+#### EC2を使うメリット
+1. **柔軟性**  
+   自由にサーバー環境をカスタマイズ可能。
+2. **コスト効率**  
+   必要な性能に応じてインスタンスサイズを選べる。
+3. **スケーラビリティ**  
+   トラフィックが増えた場合にインスタンスを追加することで負荷分散が可能。
+4. **AWSサービスとの連携**  
+   ALB、RDS（データベース）、S3（ストレージ）などと連携して、効率的な運用ができる。
+
+---
+
+
 - EC2インスタンスのセットアップ手順
   - Amazon Linux 2またはUbuntuの選定
   - 必要なパッケージ（PHP, Composer, Gitなど）のインストール
